@@ -30,9 +30,13 @@ header{
 .h-eyebrow{font-size:11px;letter-spacing:.28em;opacity:.75;}
 h1{font-size:21px;font-weight:700;letter-spacing:.04em;margin-top:4px;}
 .h-sub{font-size:12px;opacity:.85;margin-top:6px;}
-.search-area{
-  max-width:760px;margin:-14px auto 0;padding:0 16px;
+.search-sticky{
   position:sticky;top:0;z-index:10;
+  background:var(--bg);
+  box-shadow:0 6px 10px -6px rgba(28,48,80,.18);
+}
+.search-area{
+  max-width:760px;margin:0 auto;padding:10px 16px 2px;
 }
 .search-box{
   background:var(--card);border:1.5px solid var(--ai);
@@ -40,6 +44,11 @@ h1{font-size:21px;font-weight:700;letter-spacing:.04em;margin-top:4px;}
   box-shadow:0 4px 14px rgba(28,48,80,.12);
 }
 .search-box span{padding:0 0 0 14px;color:var(--ai);font-size:16px;}
+#clear{
+  display:none;border:none;background:none;cursor:pointer;
+  padding:0 14px;font-size:18px;color:#9AA3AF;line-height:1;font-family:inherit;
+}
+#clear.on{display:block;}
 #q{
   flex:1;border:none;outline:none;background:none;
   padding:13px 14px 13px 10px;font-size:16px;font-family:inherit;
@@ -65,6 +74,13 @@ main{max-width:760px;margin:0 auto;padding:10px 16px 60px;}
 .brand{font-weight:700;font-size:15.5px;}
 .generic{font-size:12px;color:#6B7480;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .badges{display:flex;gap:6px;flex:none;}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.tag{
+  font-size:10px;font-weight:700;letter-spacing:.02em;
+  border-radius:4px;padding:1px 5px;line-height:1.5;
+  background:#EEF1ED;color:#5A6472;border:1px solid #DFE3DC;
+}
+.tag.warn{background:#FBF0EC;color:#9C4A38;border-color:#EBCFC6;}
 .bdg{
   font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px;
   border:1.5px solid;line-height:1.3;text-align:center;min-width:52px;
@@ -114,6 +130,12 @@ main{max-width:760px;margin:0 auto;padding:10px 16px 60px;}
 .disclaimer ul{margin:8px 0 6px;padding-left:18px;}
 .disclaimer li{margin-bottom:5px;}
 .disc-date{display:block;font-size:11px;opacity:.75;margin-top:6px;}
+#more{
+  display:block;width:100%;margin:6px 0 4px;padding:12px;
+  border:1px solid var(--ai);background:var(--card);color:var(--ai);
+  border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+#more:active{background:#EEF2F8;}
 .empty{text-align:center;color:#6B7480;padding:48px 0;font-size:14px;}
 .empty .big{font-size:34px;margin-bottom:8px;}
 footer{
@@ -136,10 +158,12 @@ footer{
   </div>
 </header>
 
+<div class="search-sticky">
 <div class="search-area">
   <div class="search-box">
     <span>🔍</span>
     <input id="q" type="search" placeholder="商品名・一般名で検索(例:タケプロン)" autocomplete="off">
+    <button id="clear" aria-label="検索をクリア">✕</button>
   </div>
   <div class="chips" id="chips">
     <button class="chip on" data-f="all">すべて</button>
@@ -148,6 +172,7 @@ footer{
     <button class="chip" data-f="cond">条件付き</button>
     <button class="chip" data-f="sr">徐放・腸溶</button>
   </div>
+</div>
 </div>
 
 <div class="note-box">
@@ -170,6 +195,7 @@ footer{
 <main>
   <div class="count" id="count"></div>
   <div id="list"></div>
+  <div id="spacer"></div>
 </main>
 
 <footer>
@@ -184,7 +210,7 @@ footer{
 // f=粉砕, k=簡易懸濁, alt=代替案, form=剤形特性
 const DRUGS = [
 // --- 消化器・PPI ---
-{n:"タケプロンOD錠",r:"たけぷろん",g:"ランソプラゾール",form:"OD錠(腸溶性顆粒含有)",f:{v:0,t:"腸溶性顆粒を潰すと失活"},k:{v:2,t:"水中で崩壊させ顆粒を潰さず投与。8Fr以下のチューブは閉塞注意"},alt:"懸濁時は顆粒を潰さない。閉塞時は注射剤等を検討"},
+{n:"タケプロンOD錠",r:"たけぷろん",g:"ランソプラゾール",form:"OD錠(腸溶性顆粒含有)",f:{v:0,t:"腸溶性顆粒を潰すと失活"},k:{v:2,t:"必ず常温の水で崩壊させる。高温の湯だと添加剤マクロゴール6000が融解しチューブ内で再凝集→閉塞。腸溶性顆粒は潰さない"},alt:"懸濁時は顆粒を潰さない。閉塞時は注射剤等を検討"},
 {n:"ネキシウムカプセル",r:"ねきしうむ",g:"エソメプラゾール",form:"腸溶性顆粒カプセル",f:{v:0,t:"顆粒の粉砕で失活"},k:{v:2,t:"脱カプセルし顆粒のまま懸濁可。顆粒を潰さない"},alt:"懸濁用顆粒分包(専用製剤)あり"},
 {n:"オメプラール錠",r:"おめぷらーる",g:"オメプラゾール",form:"腸溶錠",f:{v:0,t:"腸溶コーティング破壊で失活"},k:{v:0,t:"崩壊せず・失活のおそれ"},alt:"タケプロンOD等へ処方変更を検討"},
 {n:"パリエット錠",r:"ぱりえっと",g:"ラベプラゾール",form:"腸溶錠",f:{v:0,t:"腸溶コーティング破壊で失活"},k:{v:0,t:"崩壊しない"},alt:"タケプロンOD等へ処方変更を検討"},
@@ -220,9 +246,9 @@ const DRUGS = [
 {n:"オルメテックOD錠",r:"おるめてっく",g:"オルメサルタン",form:"OD錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:""},
 {n:"ミカルディス錠",r:"みかるでぃす",g:"テルミサルタン",form:"普通錠",f:{v:2,t:"吸湿性が高く粉砕後は速やかに使用"},k:{v:2,t:"懸濁可だが溶けにくい報告あり"},alt:"OD錠(後発)あり"},
 // --- 抗血栓 ---
-{n:"バイアスピリン錠",r:"ばいあすぴりん",g:"アスピリン",form:"腸溶錠",f:{v:2,t:"腸溶性のため原則避ける。緊急時(嚙み砕き)を除く"},k:{v:2,t:"崩壊・懸濁は可とされるが腸溶性は失われる。胃障害リスクに注意"},alt:"アスピリン原末等への変更も検討"},
+{n:"バイアスピリン錠",r:"ばいあすぴりん",g:"アスピリン",form:"腸溶錠",f:{v:2,t:"腸溶性のため原則避ける。緊急時(嚙み砕き)を除く"},k:{v:2,t:"懸濁性は良好との報告があるが腸溶性は失われ、コーティング殻で閉塞の懸念。施設により不可扱いも多く、アスピリン末やバファリン配合錠への変更が一般的"},alt:"アスピリン原末等への変更も検討"},
 {n:"ワーファリン錠",r:"わーふぁりん",g:"ワルファリン",form:"普通錠",f:{v:1,t:"粉砕可(ハイリスク薬:用量に注意)"},k:{v:1,t:"懸濁可"},alt:"顆粒あり"},
-{n:"プラザキサカプセル",r:"ぷらざきさ",g:"ダビガトラン",form:"カプセル",f:{v:0,t:"脱カプセル・粉砕で吸収増大→出血リスク"},k:{v:0,t:"脱カプセル不可"},alt:"他の DOAC への変更を検討"},
+{n:"プラザキサカプセル",r:"ぷらざきさ",g:"ダビガトラン",form:"カプセル",f:{v:0,t:"メーカーは開封不可と回答。内容物のみでは血中濃度が上昇するおそれ、かつ内容物は湿度下1日で規格外となる安定性不良"},k:{v:0,t:"メーカーが簡易懸濁を推奨せず(溶解性・安定性・吸着性とも未検討)"},alt:"他の DOAC への変更を検討"},
 {n:"イグザレルト錠",r:"いぐざれると",g:"リバーロキサバン",form:"フィルムコート錠",f:{v:1,t:"粉砕可(メーカーデータあり)"},k:{v:1,t:"懸濁可。経管投与データあり"},alt:"細粒分包・ドライシロップあり"},
 {n:"エリキュース錠",r:"えりきゅーす",g:"アピキサバン",form:"フィルムコート錠",f:{v:1,t:"粉砕可(メーカーデータあり)"},k:{v:1,t:"懸濁可。経管投与データあり"},alt:""},
 {n:"リクシアナ錠・OD錠",r:"りくしあな",g:"エドキサバン",form:"普通錠/OD錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"OD錠あり"},
@@ -276,6 +302,9 @@ const DRUGS = [
 {n:"テオドール錠",r:"ておどーる",g:"テオフィリン徐放",form:"徐放錠(徐放性顆粒)",f:{v:0,t:"徐放性破壊→中毒域の危険"},k:{v:2,t:"崩壊するが徐放性顆粒が残る。顆粒を潰さず太めのチューブで"},alt:"テオドール顆粒・ユニフィルへの変更も検討"},
 {n:"ユニフィルLA錠",r:"ゆにふぃる",g:"テオフィリン徐放",form:"徐放錠",f:{v:0,t:"徐放性破壊"},k:{v:0,t:"崩壊しない"},alt:"テオドール(懸濁条件付き)等へ変更を検討"},
 {n:"ムコダイン錠",r:"むこだいん",g:"カルボシステイン",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"シロップ・DSあり"},
+{n:"ビソルボン錠",r:"びそるぼん",g:"ブロムヘキシン",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"細粒・吸入液・注射あり"},
+{n:"メプチン錠・ミニ錠",r:"めぷちん",g:"プロカテロール",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"ドライシロップあり"},
+{n:"ポラキス錠",r:"ぽらきす",g:"オキシブチニン",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"貼付剤(ネオキシテープ)あり"},
 {n:"ムコソルバン錠",r:"むこそるばん",g:"アンブロキソール",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"内用液・徐放カプセル(L=不可)に注意"},
 {n:"シングレア/キプレス錠",r:"しんぐれあ",g:"モンテルカスト",form:"フィルムコート錠",f:{v:2,t:"光に不安定。粉砕後は遮光・速やかに使用"},k:{v:1,t:"懸濁可"},alt:"OD錠・細粒・チュアブルあり"},
 // --- 抗菌・抗ウイルス ---
@@ -411,7 +440,6 @@ const DRUGS = [
 // --- 鎮咳去痰(追加) ---
 {n:"メジコン錠",r:"めじこん",g:"デキストロメトルファン",form:"フィルムコート錠",f:{v:1,t:"粉砕可。苦味"},k:{v:1,t:"懸濁可"},alt:"散・配合シロップあり"},
 {n:"アスベリン錠",r:"あすべりん",g:"チペピジン",form:"糖衣錠",f:{v:2,t:"糖衣錠。散への変更が無難"},k:{v:2,t:"糖衣のため崩壊に時間"},alt:"散・シロップ・ドライシロップあり"},
-{n:"ビソルボン錠",r:"びそるぼん",g:"ブロムヘキシン",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"細粒・吸入液・注射あり"},
 {n:"ムコソルバンL徐放カプセル",r:"むこそるばんえる",g:"アンブロキソール徐放",form:"徐放カプセル",f:{v:0,t:"徐放性破壊"},k:{v:2,t:"脱カプセルし徐放顆粒を潰さず投与"},alt:"普通錠(1日3回)へ変更を検討"},
 // --- 抗菌薬(追加) ---
 {n:"サワシリン/アモキシシリンカプセル・錠",r:"さわしりん",g:"アモキシシリン",form:"カプセル/錠",f:{v:1,t:"脱カプセル・粉砕可"},k:{v:1,t:"懸濁可"},alt:"細粒あり"},
@@ -557,7 +585,6 @@ const DRUGS = [
 {n:"イムセラ/ジレニアカプセル",r:"いむせら",g:"フィンゴリモド",form:"カプセル",f:{v:2,t:"脱カプセルのデータ限定的。メーカー資料確認"},k:{v:2,t:"データ限定的。要確認"},alt:""},
 // --- 呼吸器(追加) ---
 {n:"スピロペント錠",r:"すぴろぺんと",g:"クレンブテロール",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:""},
-{n:"メプチン錠・ミニ錠",r:"めぷちん",g:"プロカテロール",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"ドライシロップ・吸入あり"},
 // --- 抗アレルギー(追加) ---
 {n:"セルテクト錠",r:"せるてくと",g:"オキサトミド",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"ドライシロップあり"},
 {n:"アイピーディカプセル",r:"あいぴーでぃ",g:"スプラタスト",form:"カプセル",f:{v:1,t:"脱カプセル可"},k:{v:1,t:"懸濁可"},alt:"ドライシロップあり"},
@@ -685,11 +712,68 @@ const DRUGS = [
 // --- 眼科・耳鼻科内服(追加) ---
 {n:"イソバイドシロップ",r:"いそばいど",g:"イソソルビド",form:"内用液",f:{v:1,t:"内用液のため可"},k:{v:2,t:"高浸透圧・粘稠。希釈して投与、下痢に注意"},alt:"ゼリー製剤あり"},
 {n:"カリジノゲナーゼ錠",r:"かりじのげなーぜ",g:"カリジノゲナーゼ",form:"糖衣錠",f:{v:2,t:"糖衣錠のため粉砕しにくい"},k:{v:2,t:"糖衣のため崩壊に時間"},alt:""},
+// --- 追加(循環器・腎) ---
+{n:"ケーサプライ錠",r:"けーさぷらい",g:"塩化カリウム徐放",form:"徐放錠",f:{v:0,t:"徐放性破壊→消化管潰瘍リスク"},k:{v:0,t:"崩壊しない"},alt:"アスパラカリウム散・グルコンサンK細粒へ変更"},
+{n:"グルコンサンK錠・細粒",r:"ぐるこんさんけー",g:"グルコン酸カリウム",form:"普通錠/細粒",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"細粒が経管向き"},
+{n:"カリメート散・経口液・DS",r:"かりめーと",g:"ポリスチレンスルホン酸カルシウム",form:"散/経口液/ドライシロップ",f:{v:1,t:"散・DSはそのまま可(粉砕対象外)"},k:{v:2,t:"粘稠・沈降しやすく閉塞注意。経口液を直接注入し前後に十分フラッシュ"},alt:"経管には経口液20%が向く。ゼリー製剤(旧アーガメイト=三和の後発)は名称変更済み"},
+// --- 追加10品目 ---
+{n:"ナルサス錠",r:"なるさす",g:"ヒドロモルフォン徐放",form:"徐放錠(1日1回)",f:{v:0,t:"徐放性破壊→過量投与・呼吸抑制の危険"},k:{v:0,t:"崩壊せず徐放性も失われる"},alt:"ナルラピド錠(速放)やナルベイン注へ換算のうえ変更を検討"},
+{n:"ナルラピド錠",r:"なるらぴど",g:"ヒドロモルフォン速放",form:"フィルムコート錠(速放)",f:{v:1,t:"速放製剤で粉砕可。麻薬のため計数・記録に注意"},k:{v:1,t:"懸濁可"},alt:"内服液がないためレスキューは本剤の懸濁が現実的"},
+{n:"タペンタ錠",r:"たぺんた",g:"タペンタドール徐放",form:"乱用防止徐放錠",f:{v:0,t:"硬く粉砕困難な乱用防止製剤。徐放性破壊で危険"},k:{v:0,t:"水でゲル化しチューブ閉塞"},alt:"他のオピオイドへ換算のうえ変更を検討"},
+{n:"メサペイン錠",r:"めさぺいん",g:"メサドン",form:"普通錠",f:{v:2,t:"粉砕の報告はあるが、蓄積性・QT延長のハイリスク薬。処方医と要相談"},k:{v:2,t:"データ限定的。専門医の管理下で判断"},alt:""},
+{n:"フィコンパ錠",r:"ふぃこんぱ",g:"ペランパネル",form:"フィルムコート錠",f:{v:2,t:"粉砕データ限定的。メーカー資料確認"},k:{v:2,t:"データ限定的。要確認"},alt:"細粒あり(細粒の利用を推奨)"},
+{n:"プロテカジン錠・OD錠",r:"ぷろてかじん",g:"ラフチジン",form:"普通錠/OD錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"OD錠あり"},
+{n:"ラニラピッド錠",r:"らにらぴっど",g:"メチルジゴキシン",form:"普通錠",f:{v:1,t:"粉砕可(ハイリスク薬:低含量のため含量均一性に注意)"},k:{v:1,t:"懸濁可"},alt:""},
+{n:"ピモベンダン錠(アカルディ)",r:"ぴもべんだん",g:"ピモベンダン",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:""},
+{n:"ベプリコール錠",r:"べぷりこーる",g:"ベプリジル",form:"普通錠",f:{v:1,t:"粉砕可(ハイリスク薬:QT延長・torsadesに注意)"},k:{v:1,t:"懸濁可"},alt:""},
+{n:"ジャドニュ顆粒",r:"じゃどにゅ",g:"デフェラシロクス",form:"顆粒分包",f:{v:1,t:"顆粒のためそのまま可(旧エクジェイドの懸濁用錠とは別製剤)"},k:{v:2,t:"水に分散して投与可だが沈降しやすい。十分撹拌しフラッシュ"},alt:"食前投与の条件に注意"},
+{n:"ピートルチュアブル錠・顆粒",r:"ぴーとる",g:"スクロオキシ水酸化鉄",form:"チュアブル錠/顆粒",f:{v:1,t:"噛み砕き前提の製剤。粉砕可"},k:{v:2,t:"顆粒は懸濁可だが黒色で強い着色。チューブ閉塞・着色に注意"},alt:"顆粒分包あり"},
+{n:"ケイキサレート散",r:"けいきされーと",g:"ポリスチレンスルホン酸ナトリウム",form:"散/ドライシロップ",f:{v:1,t:"散のためそのまま可"},k:{v:2,t:"沈降・閉塞に注意。十分に撹拌しフラッシュ"},alt:""},
+{n:"シンバスタチン錠",r:"しんばすたちん",g:"シンバスタチン",form:"フィルムコート錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:""},
+{n:"メバロチン錠",r:"めばろちん",g:"プラバスタチン",form:"普通錠",f:{v:1,t:"粉砕可。光・湿度にやや注意"},k:{v:1,t:"懸濁可"},alt:"細粒あり"},
+{n:"ローコール錠",r:"ろーこーる",g:"フルバスタチン",form:"フィルムコート錠",f:{v:2,t:"粉砕可だが光に不安定。遮光し速やかに使用"},k:{v:1,t:"懸濁可"},alt:""},
+// --- 追加(消化器・肝) ---
+{n:"アサコール錠",r:"あさこーる",g:"メサラジン(pH依存放出)",form:"腸溶錠",f:{v:0,t:"pH依存放出コーティング破壊で大腸到達性が失われる"},k:{v:0,t:"崩壊せず放出制御も失われる"},alt:"ペンタサ顆粒への変更を検討"},
+{n:"ペンタサ錠・顆粒",r:"ぺんたさ",g:"メサラジン(徐放)",form:"徐放錠/顆粒",f:{v:0,t:"徐放性破壊(錠剤)"},k:{v:2,t:"顆粒は懸濁可だが徐放性微粒子を潰さない。錠剤は不可"},alt:"顆粒(徐放性)の利用を推奨"},
+{n:"リアルダ錠",r:"りあるだ",g:"メサラジン(MMX)",form:"MMX徐放錠",f:{v:0,t:"MMX製剤で放出制御が失われる"},k:{v:0,t:"崩壊しない"},alt:"ペンタサ顆粒等へ変更を検討"},
+{n:"サラゾピリン錠",r:"さらぞぴりん",g:"サラゾスルファピリジン",form:"普通錠",f:{v:1,t:"粉砕可(腸溶のENとは別)。着色に注意"},k:{v:1,t:"懸濁可。橙黄色の着色"},alt:"坐剤あり"},
+{n:"ラグノスNF経口ゼリー",r:"らぐのす",g:"ラクツロース",form:"経口ゼリー(分包)",f:{v:1,t:"ゼリーのためそのまま可"},k:{v:1,t:"水で希釈して注入可。粘度に注意しフラッシュ"},alt:"シロップあり"},
+{n:"モニラック・カロリーナ",r:"もにらっく",g:"ラクツロース",form:"シロップ",f:{v:1,t:"シロップのため可"},k:{v:1,t:"希釈して投与可"},alt:""},
+{n:"リフキシマ錠",r:"りふきしま",g:"リファキシミン",form:"フィルムコート錠",f:{v:2,t:"粉砕データ限定的。難吸収性で曝露は少ないが要確認"},k:{v:2,t:"データ限定的。要確認"},alt:""},
+{n:"アミノレバンEN配合散",r:"あみのればん",g:"肝不全用アミノ酸製剤",form:"配合散",f:{v:1,t:"散剤のためそのまま可"},k:{v:2,t:"溶解しにくく粘稠。十分撹拌のうえ投与、閉塞注意"},alt:""},
+{n:"リーバクト配合顆粒",r:"りーばくと",g:"分岐鎖アミノ酸",form:"顆粒",f:{v:1,t:"顆粒のためそのまま可"},k:{v:2,t:"水に溶けにくく沈降。十分撹拌しフラッシュ"},alt:"ゼリーあり"},
+// --- 追加(内分泌・骨) ---
+{n:"デノタスチュアブル配合錠",r:"でのたす",g:"沈降炭酸Ca・VD・Mg",form:"チュアブル錠",f:{v:1,t:"噛み砕き前提の製剤。粉砕可"},k:{v:1,t:"水で崩壊・懸濁可"},alt:""},
+{n:"ボンビバ錠",r:"ぼんびば",g:"イバンドロン酸",form:"フィルムコート錠",f:{v:0,t:"食道・口腔粘膜刺激のため粉砕不可"},k:{v:2,t:"原則推奨されない。静注製剤への変更を優先"},alt:"ボンビバ静注へ変更を検討"},
+// --- 追加(泌尿器・婦人科) ---
+{n:"ジエノゲスト錠",r:"じえのげすと",g:"ジエノゲスト",form:"普通錠",f:{v:2,t:"ホルモン剤。粉砕時の曝露に注意、データ限定的"},k:{v:2,t:"データ限定的。曝露対策のうえ"},alt:""},
+{n:"ルナベル/フリウェル配合錠",r:"るなべる",g:"ノルエチステロン・EE",form:"フィルムコート錠",f:{v:2,t:"ホルモン剤。粉砕時の曝露に注意"},k:{v:2,t:"データ限定的。要確認"},alt:""},
+// --- 追加(感染症・その他) ---
+{n:"ラスビック錠",r:"らすびっく",g:"ラスクフロキサシン",form:"フィルムコート錠",f:{v:2,t:"粉砕データ限定的。メーカー資料確認"},k:{v:2,t:"データ限定的。要確認"},alt:""},
+{n:"アンコチル錠",r:"あんこちる",g:"フルシトシン",form:"普通錠",f:{v:2,t:"粉砕可だが曝露に注意(催奇形性の報告)"},k:{v:2,t:"懸濁報告あり。曝露対策のうえ"},alt:""},
+{n:"ノクサフィル錠",r:"のくさふぃる",g:"ポサコナゾール",form:"腸溶性徐放錠",f:{v:0,t:"放出制御が失われる"},k:{v:0,t:"崩壊しない"},alt:"内用懸濁液あり(用量換算に注意)"},
+{n:"クラビット細粒",r:"くらびっとさいりゅう",g:"レボフロキサシン細粒",form:"細粒",f:{v:1,t:"細粒のためそのまま可"},k:{v:1,t:"懸濁可。制酸剤・鉄剤とは時間をあける"},alt:""},
+{n:"デノシンカプセル",r:"でのしん",g:"バルガンシクロビル",form:"錠/カプセル",f:{v:0,t:"抗ウイルス薬で細胞毒性あり。粉砕は曝露リスク"},k:{v:2,t:"懸濁は曝露対策のうえ施設判断で"},alt:"ドライシロップあり"},
+// --- 追加(神経・精神) ---
+{n:"ウインタミン細粒",r:"ういんたみん",g:"クロルプロマジン細粒",form:"細粒",f:{v:1,t:"細粒のためそのまま可"},k:{v:1,t:"懸濁可。皮膚付着に注意"},alt:""},
+{n:"リスパダール内用液",r:"りすぱだーるえき",g:"リスペリドン内用液",form:"内用液(分包)",f:{v:1,t:"液剤のためそのまま可"},k:{v:1,t:"経管投与に適する。茶葉抽出飲料と混ぜない"},alt:"経管では液剤が第一選択"},
+{n:"エビリファイ内用液",r:"えびりふぁいえき",g:"アリピプラゾール内用液",form:"内用液",f:{v:1,t:"液剤のためそのまま可"},k:{v:1,t:"経管投与に適する"},alt:""},
+{n:"デパケンシロップ",r:"でぱけんしろっぷ",g:"バルプロ酸シロップ",form:"シロップ",f:{v:1,t:"液剤のためそのまま可"},k:{v:1,t:"経管投与に適する。カルバペネム併用禁忌"},alt:"経管では錠剤よりシロップ推奨"},
+{n:"アタラックスPカプセル",r:"あたらっくす",g:"ヒドロキシジン",form:"カプセル",f:{v:1,t:"脱カプセル可"},k:{v:1,t:"懸濁可"},alt:"散・シロップあり"},
+{n:"ヒベルナ/ピレチア錠",r:"ひべるな",g:"プロメタジン",form:"糖衣錠",f:{v:2,t:"糖衣錠のため粉砕しにくい"},k:{v:2,t:"糖衣のため崩壊に時間"},alt:"散あり"},
+{n:"サアミオン錠",r:"さあみおん",g:"ニセルゴリン",form:"普通錠",f:{v:1,t:"粉砕可"},k:{v:1,t:"懸濁可"},alt:"散あり"},
+{n:"ケタスカプセル",r:"けたす",g:"イブジラスト",form:"カプセル",f:{v:1,t:"脱カプセル可"},k:{v:1,t:"懸濁可"},alt:""},
+// --- 追加(呼吸器・その他) ---
+{n:"エンシュア・リキッド/ラコール",r:"えんしゅあ",g:"経腸栄養剤",form:"液剤/半固形",f:{v:1,t:"液剤のためそのまま可"},k:{v:1,t:"経管投与に適する。薬剤との同時注入は避け前後フラッシュ"},alt:""},
+{n:"ツインライン/エレンタール",r:"えれんたーる",g:"成分栄養剤",form:"配合内用剤",f:{v:1,t:"そのまま可"},k:{v:1,t:"溶解して経管投与可。粘度・浸透圧に注意"},alt:""},
+{n:"ビオチン散",r:"びおちん",g:"ビオチン",form:"散剤",f:{v:1,t:"散剤のためそのまま可"},k:{v:1,t:"懸濁可"},alt:""},
+{n:"デュファストン錠",r:"でゅふぁすとん",g:"ジドロゲステロン",form:"普通錠",f:{v:2,t:"ホルモン剤。粉砕時の曝露に注意"},k:{v:2,t:"データ限定的。要確認"},alt:""},
 ];
 
 // ===== 検索ロジック =====
 const $q = document.getElementById('q');
 const $list = document.getElementById('list');
+const $spacer = document.getElementById('spacer');
 const $count = document.getElementById('count');
 let filter = 'all';
 
@@ -701,6 +785,35 @@ function norm(s){
     .toLowerCase().replace(/\s+/g,'');
 }
 
+// 注意文・剤形から「なぜ不可/条件付きか」のタグを機械的に抽出する。
+// 手作業でタグ付けすると追加時に漏れるため、既存テキストから導出する方式。
+const TAG_RULES = [
+  ['徐放',      /徐放|放出制御|OROS|MMX|OCAS/,           1],
+  ['腸溶',      /腸溶|pH依存/,                            1],
+  ['膨潤',      /膨潤|ゲル化/,                            1],
+  ['曝露注意',  /曝露|抗がん|催奇形|経皮吸収|細胞毒性/,   1],
+  ['軟カプセル',/軟カプセル|油状|液状/,                   1],
+  ['粘膜刺激',  /粘膜刺激|食道.{0,4}刺激/,                1],
+  ['吸収低下',  /吸収が著しく低下|吸収.{0,6}依存|吸収が低下|吸収増大|血中濃度が上昇/, 1],
+  ['閉塞注意',  /閉塞/,                                   1],
+  ['データ不足',/データ限定的|データなし|要確認|未検討/,  0],
+  ['苦味',      /苦味/,                                   0],
+  ['光',        /光に不安定|遮光|光で分解|光・/,          0],
+  ['吸湿',      /吸湿|潮解|湿度/,                         0],
+  ['沈降',      /沈降|溶けにく|溶け残/,                   0],
+  ['糖衣',      /糖衣/,                                   0],
+  ['着色',      /着色/,                                   0],
+];
+
+function tagsOf(d){
+  const s = [d.form, d.f.t, d.k.t].join(' ');
+  return TAG_RULES.filter(r => r[1].test(s)).slice(0, 3);   // 詰め込みすぎない
+}
+
+// 商品名の読み(ひらがな)で五十音順に並べる
+function byKana(a,b){
+  return a.r.localeCompare(b.r, 'ja');
+}
 function vLabel(v){return v===1?'可':v===2?'条':'否';}
 function vClass(v){return v===1?'v1':v===2?'v2':'v0';}
 function cClass(v){return v===1?'c1':v===2?'c2':'c0';}
@@ -717,20 +830,17 @@ function matches(d, nq){
 
 function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
-function render(){
-  const nq = norm($q.value);
-  const hits = DRUGS.filter(d=>matches(d,nq));
-  $count.textContent = `${hits.length} 件 / 全 ${DRUGS.length} 件`;
-  if(!hits.length){
-    $list.innerHTML = '<div class="empty"><div class="big">🧪</div>該当する薬剤がありません。<br>別の名称(商品名・一般名)で検索してください。</div>';
-    return;
-  }
-  $list.innerHTML = hits.map((d,i)=>`
+const PAGE = 40;          // 一度に描画する件数(478件を一括描画するとスマホで重い)
+let shown = PAGE, curHits = [];
+
+function cardHTML(d){
+  return `
   <div class="card" data-i="${DRUGS.indexOf(d)}">
     <div class="row" role="button" tabindex="0" aria-expanded="false">
       <div class="names">
         <div class="brand">${esc(d.n)}</div>
         <div class="generic">${esc(d.g)} ・ ${esc(d.form)}</div>
+        ${(()=>{const t=tagsOf(d);return t.length?`<div class="tags">${t.map(x=>`<span class="tag${x[2]?' warn':''}">${esc(x[0])}</span>`).join('')}${d.alt?'<span class="tag">💡代替あり</span>':''}</div>`:(d.alt?'<div class="tags"><span class="tag">💡代替あり</span></div>':'');})()}
       </div>
       <div class="badges">
         <div class="bdg ${vClass(d.f.v)}"><small>粉砕</small>${vLabel(d.f.v)}</div>
@@ -753,7 +863,48 @@ function render(){
       ${d.alt?`<div class="alt">💡 <b>代替案:</b> ${esc(d.alt)}</div>`:''}
       <span class="form-tag">${esc(d.form)}</span>
     </div>
-  </div>`).join('');
+  </div>`;
+}
+
+function paint(){
+  if($spacer) $spacer.style.height = '0px';
+  const slice = curHits.slice(0, shown);
+  $list.innerHTML = slice.map(cardHTML).join('');
+  const rest = curHits.length - shown;
+  if(rest > 0){
+    const btn = document.createElement('button');
+    btn.id = 'more';
+    btn.textContent = `さらに表示(残り${rest}件)`;
+    btn.addEventListener('click', ()=>{ shown += PAGE; paint(); });
+    $list.appendChild(btn);
+  }
+}
+
+function render(){
+  const nq = norm($q.value);
+  curHits = DRUGS.filter(d=>matches(d,nq)).sort(byKana);
+  shown = PAGE;
+  $count.textContent = `${curHits.length} 件 / 全 ${DRUGS.length} 件`;
+  document.getElementById('clear').classList.toggle('on', $q.value.length>0);
+  if(!curHits.length){
+    $list.innerHTML = '<div class="empty"><div class="big">🧪</div>該当する薬剤がありません。<br>別の名称(商品名・一般名)で検索してください。</div>';
+    return;
+  }
+  paint();
+}
+
+// 開いたカードを常に画面上部へ。sticky検索バーの裏に隠れないようその高さ分オフセットする
+function focusCard(card){
+  const sticky = document.querySelector('.search-sticky');
+  const offset = (sticky ? sticky.getBoundingClientRect().height : 0) + 8;
+  const y = window.scrollY + card.getBoundingClientRect().top - offset;
+
+  // リスト末尾付近のカードは下に余白が足りず上部まで来ないので、
+  // 必要な分だけ一時的にスペーサーを伸ばす
+  const needed = y + window.innerHeight - document.body.scrollHeight;
+  if(needed > 0) $spacer.style.height = ($spacer.offsetHeight + needed) + 'px';
+
+  window.scrollTo({top: Math.max(0, y), behavior: 'smooth'});
 }
 
 $list.addEventListener('click', e=>{
@@ -762,6 +913,8 @@ $list.addEventListener('click', e=>{
   const card = row.parentElement;
   const open = card.classList.toggle('open');
   row.setAttribute('aria-expanded', open);
+  // 展開後のレイアウト確定を待ってから位置を合わせる
+  if(open) requestAnimationFrame(()=>focusCard(card));
 });
 $list.addEventListener('keydown', e=>{
   if((e.key==='Enter'||e.key===' ') && e.target.classList.contains('row')){
@@ -770,6 +923,9 @@ $list.addEventListener('keydown', e=>{
 });
 
 $q.addEventListener('input', render);
+document.getElementById('clear').addEventListener('click', ()=>{
+  $q.value=''; render(); $q.focus();
+});
 document.getElementById('chips').addEventListener('click', e=>{
   const c = e.target.closest('.chip');
   if(!c) return;
